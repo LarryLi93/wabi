@@ -1,32 +1,18 @@
-//
-//  WabiApp.swift
-//  Wabi
-//
-//  Created by larryli on 2026/3/24.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct WabiApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @StateObject private var localizationManager = LocalizationManager()
+    @StateObject private var authManager = AuthSessionManager()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environmentObject(authManager)
+                .environmentObject(localizationManager)
+                .environment(\.locale, localizationManager.locale)
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(for: Note.self)
     }
 }
