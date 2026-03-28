@@ -119,6 +119,8 @@
 "sign_in_benefit_sync_title" = "更像属于你的空间";
 "sign_in_benefit_sync_description" = "头像与登录态会让整个工作区更有归属感，也更容易安全退出。";
 "sign_in_button_hint" = "Apple 只会在第一次登录时提供姓名与邮箱。";
+"sign_in_tagline" = "不慌不忙，每张笔记自有安处";
+"loading" = "加载中...";
 "apple_sign_in_unavailable" = "Apple 登录暂时不可用，请稍后再试。";
 "logout" = "退出登录";
 "account_no_email" = "当前没有可显示的 Apple 邮箱";

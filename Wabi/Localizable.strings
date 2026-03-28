@@ -119,6 +119,8 @@
 "sign_in_benefit_sync_title" = "A clearer personal corner";
 "sign_in_benefit_sync_description" = "Your avatar and session state make the workspace feel owned and easy to leave safely.";
 "sign_in_button_hint" = "We request your name and email only on the first Apple sign-in.";
+"sign_in_tagline" = "A quiet place for thoughts, references, and gentle review.";
+"loading" = "Loading...";
 "apple_sign_in_unavailable" = "Apple Sign In is temporarily unavailable. Please try again.";
 "logout" = "Log out";
 "account_no_email" = "Your Apple email is not available";
