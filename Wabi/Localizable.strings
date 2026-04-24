@@ -124,3 +124,10 @@
 "apple_sign_in_unavailable" = "Apple Sign In is temporarily unavailable. Please try again.";
 "logout" = "Log out";
 "account_no_email" = "Your Apple email is not available";
+"settings_title" = "Settings";
+"settings_account_section" = "Account";
+"settings_app_section" = "App";
+"settings_language" = "Language";
+"account_no_name" = "User";
+"tab_settings" = "Settings";
+"home_title" = "My Notes";

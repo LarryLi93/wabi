@@ -124,3 +124,10 @@
 "apple_sign_in_unavailable" = "Apple 登录暂时不可用，请稍后再试。";
 "logout" = "退出登录";
 "account_no_email" = "当前没有可显示的 Apple 邮箱";
+"settings_title" = "设置";
+"settings_account_section" = "账号";
+"settings_app_section" = "应用";
+"settings_language" = "语言设置";
+"account_no_name" = "用户";
+"tab_settings" = "设置";
+"home_title" = "我的笔记";

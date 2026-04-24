@@ -16,18 +16,14 @@ struct HomeSectionView: View {
     let categoryNames: [String]
     let linkedCount: Int
     let categorizedCount: Int
-    let onCreate: () -> Void
-    let onShowLanguagePicker: () -> Void
-    let avatarText: String
-    let onOpenAccount: () -> Void
-    let onOpenGraph: () -> Void
-    let onOpenReview: () -> Void
     let onEdit: (Note) -> Void
     let onDelete: (Note) -> Void
     let onReview: (Note) -> Void
 
     @State private var selectedFilter: NoteFilter = .all
     @State private var searchText: String = ""
+    @State private var showNewNote = false
+    @State private var editingNote: Note?
 
     private var availableFilters: [NoteFilter] {
         var filters: [NoteFilter] = [.all]
@@ -64,34 +60,35 @@ struct HomeSectionView: View {
                         .ignoresSafeArea()
 
                     ScrollView(showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 24) {
+                        VStack(alignment: .leading, spacing: 20) {
                             Color.clear
                                 .frame(height: 1)
                                 .id("homeTop")
 
-                            heroSection
+                            Text(text("home_title"))
+                                .font(.system(size: 32, weight: .semibold, design: .serif))
+                                .foregroundStyle(WabiTheme.textPrimary)
+                                .padding(.top, 8)
+
+                            searchSection
+                            filtersSection
 
                             if notes.isEmpty {
                                 EmptyCollectionCard(
                                     title: text("no_notes"),
                                     description: text("empty_description"),
                                     actionTitle: text("start_writing"),
-                                    action: onCreate
+                                    action: { showNewNote = true }
                                 )
                             } else {
-                                quickEntrySection
-                                controlDeckSection
-                                overviewSection
-
-                                if !recentNotes.isEmpty {
-                                    recentSection
-                                }
+                                Text(resultsSummary)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(WabiTheme.textMuted)
 
                                 librarySection
                             }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 24)
                         .padding(.bottom, 140)
                     }
                     
@@ -102,7 +99,7 @@ struct HomeSectionView: View {
                             }
                         }
 
-                        FloatingActionButton(systemImage: "plus", fillsAccent: true, action: onCreate)
+                        FloatingActionButton(systemImage: "plus", fillsAccent: true, action: { showNewNote = true })
                     }
                     .padding(.trailing, 20)
                     .padding(.bottom, 18)
@@ -110,12 +107,11 @@ struct HomeSectionView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                AppToolbar(
-                    avatarText: avatarText,
-                    onOpenAccount: onOpenAccount,
-                    onShowLanguagePicker: onShowLanguagePicker
-                )
+            .navigationDestination(isPresented: $showNewNote) {
+                EditNoteView()
+            }
+            .navigationDestination(item: $editingNote) { note in
+                EditNoteView(note: note)
             }
         }
         .onChange(of: availableFilters) { _, newFilters in
@@ -125,155 +121,39 @@ struct HomeSectionView: View {
         }
     }
 
-    private var heroSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(text("app_title"))
-                .font(.system(size: 36, weight: .semibold, design: .serif))
+    private var searchSection: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(WabiTheme.textMuted)
+
+            TextField(text("search_placeholder"), text: $searchText)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
                 .foregroundStyle(WabiTheme.textPrimary)
 
-            Text(text("home_subtitle"))
-                .font(.system(size: 16, weight: .regular, design: .serif))
-                .foregroundStyle(WabiTheme.textSecondary)
-
-            if !notes.isEmpty {
-                Text(String(format: text("collection_summary"), locale: currentLocale, notes.count, categoryNames.count, reviewQueue.count))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(WabiTheme.textSecondary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        Capsule()
-                            .fill(WabiTheme.surface)
-                            .overlay(
-                                Capsule()
-                                    .stroke(WabiTheme.border.opacity(0.55), lineWidth: 1)
-                            )
-                    )
-            }
-        }
-    }
-
-    private var quickEntrySection: some View {
-        HStack(spacing: 12) {
-            QuickEntryCard(
-                title: text("jump_graph_title"),
-                description: text("jump_graph_description"),
-                systemImage: "point.3.connected.trianglepath.dotted",
-                action: onOpenGraph
-            )
-
-            QuickEntryCard(
-                title: text("jump_review_title"),
-                description: text("jump_review_description"),
-                systemImage: "clock.arrow.circlepath",
-                action: onOpenReview
-            )
-        }
-    }
-
-    private var controlDeckSection: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            searchSection
-            filtersSection
-
-            Text(resultsSummary)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(WabiTheme.textMuted)
-        }
-        .padding(18)
-        .background(cardBackground)
-    }
-
-    private var searchSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(WabiTheme.textMuted)
-
-                TextField(text("search_placeholder"), text: $searchText)
-                    .textInputAutocapitalization(.never)
-                    .disableAutocorrection(true)
-                    .foregroundStyle(WabiTheme.textPrimary)
-
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(WabiTheme.textMuted)
-                    }
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(WabiTheme.textMuted)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(fieldBackground)
-
-            Text(text("search_hint"))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(WabiTheme.textMuted)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(fieldBackground)
     }
 
     private var filtersSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(text("filters_title"))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(WabiTheme.textSecondary)
-
-                Spacer()
-
-                if selectedFilter != .all {
-                    Button(text("clear_filter")) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedFilter = .all
-                        }
-                    }
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(WabiTheme.accent)
-                }
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(availableFilters, id: \.self) { filter in
-                        FilterChip(title: title(for: filter), isSelected: selectedFilter == filter) {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedFilter = filter
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-        }
-    }
-
-    private var overviewSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                StatCard(title: text("stats_total"), value: "\(notes.count)", icon: "square.stack.3d.up")
-                StatCard(title: text("stats_categorized"), value: "\(categorizedCount)", icon: "square.grid.2x2")
-                StatCard(title: text("stats_linked"), value: "\(linkedCount)", icon: "link")
-                StatCard(title: text("stats_due"), value: "\(reviewQueue.count)", icon: "clock")
-            }
-            .padding(.vertical, 2)
-        }
-    }
-
-    private var recentSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionTitle(text("recent_cards_title"), subtitle: text("recent_cards_subtitle"))
-
-            LazyVStack(spacing: 14) {
-                ForEach(recentNotes) { note in
-                    NoteCard(note: note, onEdit: {
-                        onEdit(note)
-                    }, onReview: {
-                        onReview(note)
-                    }, onDelete: {
-                        onDelete(note)
-                    })
+            HStack(spacing: 10) {
+                ForEach(availableFilters, id: \.self) { filter in
+                    FilterChip(title: title(for: filter), isSelected: selectedFilter == filter) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedFilter = filter
+                        }
+                    }
                 }
             }
         }
@@ -281,8 +161,6 @@ struct HomeSectionView: View {
 
     private var librarySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionTitle(text("cards_title"), subtitle: String(format: text("cards_subtitle"), locale: currentLocale, filteredNotes.count))
-
             if filteredNotes.isEmpty {
                 EmptyCollectionCard(
                     title: text("no_results_title"),
@@ -297,7 +175,7 @@ struct HomeSectionView: View {
                 LazyVStack(spacing: 14) {
                     ForEach(filteredNotes) { note in
                         NoteCard(note: note, onEdit: {
-                            onEdit(note)
+                            editingNote = note
                         }, onReview: {
                             onReview(note)
                         }, onDelete: {
@@ -416,11 +294,10 @@ struct GraphSectionView: View {
     let notes: [Note]
     let categoryNames: [String]
     let linkedCount: Int
-    let onCreate: () -> Void
-    let onShowLanguagePicker: () -> Void
-    let avatarText: String
-    let onOpenAccount: () -> Void
     let onEdit: (Note) -> Void
+
+    @State private var showNewNote = false
+    @State private var editingNote: Note?
 
     private var groupedNotes: [(name: String, notes: [Note])] {
         let groups = Dictionary(grouping: notes) { note in
@@ -471,7 +348,7 @@ struct GraphSectionView: View {
                                 title: text("graph_empty_title"),
                                 description: text("graph_empty_description"),
                                 actionTitle: text("start_writing"),
-                                action: onCreate
+                                action: { showNewNote = true }
                             )
                         } else {
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -492,7 +369,7 @@ struct GraphSectionView: View {
                                             title: group.name,
                                             countText: String(format: text("graph_cluster_count"), locale: currentLocale, group.notes.count),
                                             notes: Array(group.notes.prefix(3)),
-                                            onEdit: onEdit
+                                            onEdit: { editingNote = $0 }
                                         )
                                     }
                                 }
@@ -508,7 +385,7 @@ struct GraphSectionView: View {
                                         actionTitle: text("open_card"),
                                         action: {
                                             if let note = notes.first {
-                                                onEdit(note)
+                                                editingNote = note
                                             }
                                         }
                                     )
@@ -516,7 +393,7 @@ struct GraphSectionView: View {
                                     LazyVStack(spacing: 12) {
                                         ForEach(linkedNotes) { note in
                                             LinkTrailCard(note: note, onEdit: {
-                                                onEdit(note)
+                                                editingNote = note
                                             })
                                         }
                                     }
@@ -530,12 +407,11 @@ struct GraphSectionView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                AppToolbar(
-                    avatarText: avatarText,
-                    onOpenAccount: onOpenAccount,
-                    onShowLanguagePicker: onShowLanguagePicker
-                )
+            .navigationDestination(isPresented: $showNewNote) {
+                EditNoteView()
+            }
+            .navigationDestination(item: $editingNote) { note in
+                EditNoteView(note: note)
             }
         }
     }
@@ -566,13 +442,12 @@ struct ReviewSectionView: View {
 
     let notes: [Note]
     let reviewQueue: [Note]
-    let onCreate: () -> Void
-    let onShowLanguagePicker: () -> Void
-    let avatarText: String
-    let onOpenAccount: () -> Void
     let onEdit: (Note) -> Void
     let onDelete: (Note) -> Void
     let onReview: (Note) -> Void
+
+    @State private var showNewNote = false
+    @State private var editingNote: Note?
 
     private var recentlyReviewed: [Note] {
         notes
@@ -603,7 +478,7 @@ struct ReviewSectionView: View {
                                 title: text("review_empty_title"),
                                 description: text("review_empty_description"),
                                 actionTitle: text("start_writing"),
-                                action: onCreate
+                                action: { showNewNote = true }
                             )
                         } else {
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -629,7 +504,7 @@ struct ReviewSectionView: View {
                                     LazyVStack(spacing: 14) {
                                         ForEach(reviewQueue) { note in
                                             ReviewDeckCard(note: note, onEdit: {
-                                                onEdit(note)
+                                                editingNote = note
                                             }, onReview: {
                                                 onReview(note)
                                             }, onDelete: {
@@ -647,7 +522,7 @@ struct ReviewSectionView: View {
                                     LazyVStack(spacing: 12) {
                                         ForEach(Array(recentlyReviewed.prefix(6))) { note in
                                             ReviewedHistoryCard(note: note, onEdit: {
-                                                onEdit(note)
+                                                editingNote = note
                                             })
                                         }
                                     }
@@ -661,12 +536,11 @@ struct ReviewSectionView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                AppToolbar(
-                    avatarText: avatarText,
-                    onOpenAccount: onOpenAccount,
-                    onShowLanguagePicker: onShowLanguagePicker
-                )
+            .navigationDestination(isPresented: $showNewNote) {
+                EditNoteView()
+            }
+            .navigationDestination(item: $editingNote) { note in
+                EditNoteView(note: note)
             }
         }
     }
@@ -688,52 +562,114 @@ struct ReviewSectionView: View {
     }
 }
 
-private struct AppToolbar: ToolbarContent {
-    let avatarText: String
-    let onOpenAccount: () -> Void
+struct SettingsSectionView: View {
+    @EnvironmentObject private var localizationManager: LocalizationManager
+    @EnvironmentObject private var authManager: AuthSessionManager
+
     let onShowLanguagePicker: () -> Void
-
-    var body: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
-            Button(action: onOpenAccount) {
-                Text(avatarText)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        Circle()
-                            .fill(WabiTheme.accent)
-                    )
-            }
-            .buttonStyle(.plain)
-        }
-
-        ToolbarItem(placement: .navigationBarTrailing) {
-            ToolbarCircleButton(systemImage: "globe", fillsAccent: false, action: onShowLanguagePicker)
-        }
-    }
-}
-
-private struct ToolbarCircleButton: View {
-    let systemImage: String
-    let fillsAccent: Bool
-    let action: () -> Void
+    let onOpenAccount: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(fillsAccent ? Color.white : WabiTheme.textSecondary)
-                .frame(width: 36, height: 36)
-                .background(
-                    Circle()
-                        .fill(fillsAccent ? WabiTheme.accent : WabiTheme.surface)
-                        .overlay(
-                            Circle()
-                                .stroke(WabiTheme.border.opacity(fillsAccent ? 0 : 0.55), lineWidth: 1)
-                        )
-                )
+        NavigationStack {
+            ZStack {
+                WabiTheme.background
+                    .ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        Text(text("settings_title"))
+                            .font(.system(size: 34, weight: .semibold, design: .serif))
+                            .foregroundStyle(WabiTheme.textPrimary)
+                            .padding(.top, 24)
+
+                        // Account Section
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text(text("settings_account_section"))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(WabiTheme.textSecondary)
+                                .padding(.horizontal, 4)
+
+                            Button(action: onOpenAccount) {
+                                HStack(spacing: 16) {
+                                    Text(authManager.currentUser?.initials ?? "?")
+                                        .font(.system(size: 20, weight: .semibold, design: .serif))
+                                        .foregroundStyle(Color.white)
+                                        .frame(width: 52, height: 52)
+                                        .background(Circle().fill(WabiTheme.accent))
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(authManager.currentUser?.displayName ?? text("account_no_name"))
+                                            .font(.system(size: 17, weight: .semibold))
+                                            .foregroundStyle(WabiTheme.textPrimary)
+
+                                        Text(authManager.currentUser?.email ?? text("account_no_email"))
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(WabiTheme.textMuted)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(WabiTheme.textMuted)
+                                }
+                                .padding(18)
+                                .background(cardBackground)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        // App Settings Section
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text(text("settings_app_section"))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(WabiTheme.textSecondary)
+                                .padding(.horizontal, 4)
+
+                            VStack(spacing: 0) {
+                                Button(action: onShowLanguagePicker) {
+                                    HStack {
+                                        Label(text("settings_language"), systemImage: "globe")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundStyle(WabiTheme.textPrimary)
+
+                                        Spacer()
+
+                                        Text(localizationManager.currentLanguage == "en" ? "English" : "中文")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(WabiTheme.textSecondary)
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(WabiTheme.textMuted)
+                                    }
+                                    .padding(18)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .background(cardBackground)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                }
+            }
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .fill(WabiTheme.card)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(WabiTheme.border.opacity(0.45), lineWidth: 1)
+            )
+    }
+
+    private func text(_ key: String) -> String {
+        key.localized(with: localizationManager)
     }
 }
 
@@ -757,43 +693,6 @@ private struct FloatingActionButton: View {
                         )
                         .shadow(color: WabiTheme.textPrimary.opacity(0.08), radius: 12, x: 0, y: 6)
                 )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct QuickEntryCard: View {
-    let title: String
-    let description: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(WabiTheme.accent)
-
-                Text(title)
-                    .font(.system(size: 17, weight: .semibold, design: .serif))
-                    .foregroundStyle(WabiTheme.textPrimary)
-
-                Text(description)
-                    .font(.system(size: 13))
-                    .foregroundStyle(WabiTheme.textSecondary)
-                    .multilineTextAlignment(.leading)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(18)
-            .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(WabiTheme.surface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .stroke(WabiTheme.border.opacity(0.45), lineWidth: 1)
-                    )
-            )
         }
         .buttonStyle(.plain)
     }
@@ -849,142 +748,74 @@ struct NoteCard: View {
     let onReview: () -> Void
     let onDelete: () -> Void
 
-    private var primaryReferenceURL: URL? {
-        note.resolvedReferenceURLs.first
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(note.title)
-                        .font(.system(size: 22, weight: .semibold, design: .serif))
-                        .foregroundStyle(WabiTheme.textPrimary)
-                        .lineLimit(2)
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(note.title)
+                    .font(.system(size: 20, weight: .semibold, design: .serif))
+                    .foregroundStyle(WabiTheme.textPrimary)
+                    .lineLimit(1)
 
-                    Text(note.content.isEmpty ? text("empty_note_content") : note.content)
-                        .font(.system(size: 15))
-                        .foregroundStyle(WabiTheme.textSecondary)
-                        .lineSpacing(3)
-                        .lineLimit(4)
-                }
+                Text(note.content.isEmpty ? text("empty_note_content") : note.content)
+                    .font(.system(size: 14))
+                    .foregroundStyle(WabiTheme.textSecondary)
+                    .lineSpacing(2)
+                    .lineLimit(2)
+            }
 
-                Spacer(minLength: 0)
-
-                HStack(spacing: 8) {
-                    Text(note.normalizedCategory ?? text("uncategorized"))
-                        .font(.system(size: 12, weight: .semibold))
+            HStack(alignment: .bottom) {
+                if let category = note.normalizedCategory {
+                    Text("#\(category)")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(WabiTheme.accent)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(WabiTheme.accentSoft.opacity(0.38))
-                        )
-
-                    NoteActionsMenu(
-                        openLinkTitle: text("open_link"),
-                        editTitle: text("open_card"),
-                        deleteTitle: text("delete"),
-                        url: primaryReferenceURL,
-                        onEdit: onEdit,
-                        onDelete: onDelete
-                    )
-                }
-            }
-
-            HStack(spacing: 10) {
-                Label(createdText, systemImage: "calendar")
-                Label(reviewDescription, systemImage: note.isReviewDue ? "clock.badge.exclamationmark" : "checkmark.circle")
-                Label(String(format: text("reviewed_count"), locale: currentLocale, note.reviewCount), systemImage: "sparkles")
-            }
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(WabiTheme.textMuted)
-
-            HStack(spacing: 10) {
-                Button(action: onReview) {
-                    Label(text("review_action"), systemImage: "checkmark.circle")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(
-                            Capsule()
-                                .fill(WabiTheme.accent)
+                                .fill(WabiTheme.accentSoft.opacity(0.3))
                         )
                 }
-                .buttonStyle(.plain)
 
-                if let url = primaryReferenceURL {
-                    Link(destination: url) {
-                        Label(openLinkText, systemImage: "link")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(WabiTheme.textSecondary)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(linkCapsule)
-                    }
-                    .buttonStyle(.plain)
-                }
+                Spacer()
+
+                Text(createdDateText)
+                    .font(.system(size: 12))
+                    .foregroundStyle(WabiTheme.textMuted)
             }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground)
-        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .onTapGesture(perform: onEdit)
+        .contextMenu {
+            Button(action: onEdit) {
+                Label(text("open_card"), systemImage: "pencil")
+            }
+            Button(role: .destructive, action: onDelete) {
+                Label(text("delete"), systemImage: "trash")
+            }
+        }
     }
 
-    private var createdText: String {
-        note.createTime.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(currentLocale))
-    }
-
-    private var reviewDescription: String {
-        guard let lastReviewedAt = note.lastReviewedAt else {
-            return text("review_never")
-        }
-
-        let days = Calendar.current.dateComponents([.day], from: lastReviewedAt, to: Date()).day ?? 0
-        if days == 0 {
-            return text("review_today")
-        }
-
-        return String(format: text("review_days_ago"), locale: currentLocale, days)
-    }
-
-    private var openLinkText: String {
-        if note.normalizedReferenceURLs.count > 1 {
-            return String(format: text("open_links_count"), locale: currentLocale, note.normalizedReferenceURLs.count)
-        }
-
-        return text("open_link")
+    private var createdDateText: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: note.createTime)
     }
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 28, style: .continuous)
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
             .fill(WabiTheme.card)
             .overlay(
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(WabiTheme.border.opacity(0.45), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(WabiTheme.border.opacity(0.4), lineWidth: 1)
             )
-            .shadow(color: WabiTheme.textPrimary.opacity(0.04), radius: 14, x: 0, y: 8)
-    }
-
-    private var linkCapsule: some View {
-        Capsule()
-            .fill(WabiTheme.surface)
-            .overlay(
-                Capsule()
-                    .stroke(WabiTheme.border.opacity(0.55), lineWidth: 1)
-            )
+            .shadow(color: WabiTheme.textPrimary.opacity(0.04), radius: 10, x: 0, y: 4)
     }
 
     private func text(_ key: String) -> String {
         key.localized(with: localizationManager)
-    }
-
-    private var currentLocale: Locale {
-        localizationManager.locale
     }
 }
 
@@ -1404,12 +1235,6 @@ private struct ReviewedHistoryCard: View {
             categoryNames: Array(Set(PreviewSupport.sampleNotes.compactMap(\.normalizedCategory))).sorted(),
             linkedCount: PreviewSupport.sampleNotes.filter { !$0.resolvedReferenceURLs.isEmpty }.count,
             categorizedCount: PreviewSupport.sampleNotes.filter { $0.normalizedCategory != nil }.count,
-            onCreate: {},
-            onShowLanguagePicker: {},
-            avatarText: "WL",
-            onOpenAccount: {},
-            onOpenGraph: {},
-            onOpenReview: {},
             onEdit: { _ in },
             onDelete: { _ in },
             onReview: { _ in }
@@ -1423,10 +1248,6 @@ private struct ReviewedHistoryCard: View {
             notes: PreviewSupport.sampleNotes,
             categoryNames: Array(Set(PreviewSupport.sampleNotes.compactMap(\.normalizedCategory))).sorted(),
             linkedCount: PreviewSupport.sampleNotes.filter { !$0.resolvedReferenceURLs.isEmpty }.count,
-            onCreate: {},
-            onShowLanguagePicker: {},
-            avatarText: "WL",
-            onOpenAccount: {},
             onEdit: { _ in }
         )
     }
@@ -1437,13 +1258,18 @@ private struct ReviewedHistoryCard: View {
         ReviewSectionView(
             notes: PreviewSupport.sampleNotes,
             reviewQueue: PreviewSupport.sampleNotes.filter(\.isReviewDue),
-            onCreate: {},
-            onShowLanguagePicker: {},
-            avatarText: "WL",
-            onOpenAccount: {},
             onEdit: { _ in },
             onDelete: { _ in },
             onReview: { _ in }
+        )
+    }
+}
+
+#Preview("设置分区") {
+    PreviewContainer {
+        SettingsSectionView(
+            onShowLanguagePicker: {},
+            onOpenAccount: {}
         )
     }
 }

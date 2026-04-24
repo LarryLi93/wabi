@@ -23,184 +23,175 @@ struct EditNoteView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                WabiTheme.background
-                    .ignoresSafeArea()
+        ZStack {
+            WabiTheme.background
+                .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(text(note == nil ? "editor_new_title" : "editor_edit_title"))
-                                .font(.system(size: 30, weight: .semibold, design: .serif))
-                                .foregroundStyle(WabiTheme.textPrimary)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(text(note == nil ? "editor_new_title" : "editor_edit_title"))
+                            .font(.system(size: 30, weight: .semibold, design: .serif))
+                            .foregroundStyle(WabiTheme.textPrimary)
 
-                            Text(text(note == nil ? "editor_new_subtitle" : "editor_edit_subtitle"))
-                                .font(.system(size: 15))
-                                .foregroundStyle(WabiTheme.textSecondary)
-                        }
+                        Text(text(note == nil ? "editor_new_subtitle" : "editor_edit_subtitle"))
+                            .font(.system(size: 15))
+                            .foregroundStyle(WabiTheme.textSecondary)
+                    }
 
-                        EditorFieldCard(title: text("title")) {
-                            TextField(text("note_title_placeholder"), text: $title, axis: .vertical)
-                                .font(.system(size: 18, weight: .medium, design: .serif))
-                                .foregroundStyle(WabiTheme.textPrimary)
-                                .textInputAutocapitalization(.sentences)
-                                .submitLabel(.next)
-                                .focused($focusedField, equals: .title)
-                                .onSubmit {
-                                    focusedField = selectedCategoryOption == CategoryOption.new.rawValue ? .newCategory : .body
+                    EditorFieldCard(title: text("title")) {
+                        TextField(text("note_title_placeholder"), text: $title, axis: .vertical)
+                            .font(.system(size: 18, weight: .medium, design: .serif))
+                            .foregroundStyle(WabiTheme.textPrimary)
+                            .textInputAutocapitalization(.sentences)
+                            .submitLabel(.next)
+                            .focused($focusedField, equals: .title)
+                            .onSubmit {
+                                focusedField = selectedCategoryOption == CategoryOption.new.rawValue ? .newCategory : .body
+                            }
+                            .padding(16)
+                            .background(fieldBackground)
+                    }
+
+                    EditorFieldCard(title: text("category")) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Picker("", selection: $selectedCategoryOption) {
+                                Text(text("category_none_option"))
+                                    .tag(CategoryOption.none.rawValue)
+
+                                ForEach(availableCategories, id: \.self) { category in
+                                    Text(category)
+                                        .tag(category)
                                 }
-                                .padding(16)
-                                .background(fieldBackground)
-                        }
 
-                        EditorFieldCard(title: text("category")) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Picker("", selection: $selectedCategoryOption) {
-                                    Text(text("category_none_option"))
-                                        .tag(CategoryOption.none.rawValue)
+                                Text(text("category_new_option"))
+                                    .tag(CategoryOption.new.rawValue)
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(fieldBackground)
 
-                                    ForEach(availableCategories, id: \.self) { category in
-                                        Text(category)
-                                            .tag(category)
+                            if selectedCategoryOption == CategoryOption.new.rawValue {
+                                TextField(text("new_category_placeholder"), text: $customCategory)
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(WabiTheme.textPrimary)
+                                    .focused($focusedField, equals: .newCategory)
+                                    .submitLabel(.next)
+                                    .onSubmit {
+                                        focusedField = .body
                                     }
+                                    .padding(16)
+                                    .background(fieldBackground)
+                            }
+                        }
+                    }
 
-                                    Text(text("category_new_option"))
-                                        .tag(CategoryOption.new.rawValue)
+                    EditorFieldCard(title: text("card_body")) {
+                        VStack(alignment: .leading, spacing: 14) {
+                            ZStack(alignment: .topLeading) {
+                                if bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Text(text("card_body_placeholder"))
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(WabiTheme.textMuted)
+                                        .padding(.horizontal, 18)
+                                        .padding(.vertical, 20)
                                 }
-                                .labelsHidden()
-                                .pickerStyle(.menu)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
-                                .background(fieldBackground)
 
-                                if selectedCategoryOption == CategoryOption.new.rawValue {
-                                    TextField(text("new_category_placeholder"), text: $customCategory)
+                                TextEditor(text: $bodyText)
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(WabiTheme.textPrimary)
+                                    .frame(minHeight: 280)
+                                    .scrollContentBackground(.hidden)
+                                    .padding(12)
+                                    .focused($focusedField, equals: .body)
+                                    .background(fieldBackground)
+                            }
+
+                            Text(text("body_helper"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(WabiTheme.textMuted)
+                        }
+                    }
+
+                    EditorFieldCard(title: text("reference_link")) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach($referenceLinks) { $link in
+                                HStack(spacing: 10) {
+                                    TextField(text("reference_link_placeholder"), text: $link.value)
                                         .font(.system(size: 16))
                                         .foregroundStyle(WabiTheme.textPrimary)
-                                        .focused($focusedField, equals: .newCategory)
-                                        .submitLabel(.next)
-                                        .onSubmit {
-                                            focusedField = .body
-                                        }
+                                        .textInputAutocapitalization(.never)
+                                        .keyboardType(.URL)
+                                        .autocorrectionDisabled()
                                         .padding(16)
                                         .background(fieldBackground)
-                                }
-                            }
-                        }
 
-                        EditorFieldCard(title: text("card_body")) {
-                            VStack(alignment: .leading, spacing: 14) {
-                                ZStack(alignment: .topLeading) {
-                                    if bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                        Text(text("card_body_placeholder"))
-                                            .font(.system(size: 16))
-                                            .foregroundStyle(WabiTheme.textMuted)
-                                            .padding(.horizontal, 18)
-                                            .padding(.vertical, 20)
-                                    }
-
-                                    TextEditor(text: $bodyText)
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(WabiTheme.textPrimary)
-                                        .frame(minHeight: 280)
-                                        .scrollContentBackground(.hidden)
-                                        .padding(12)
-                                        .focused($focusedField, equals: .body)
-                                        .background(fieldBackground)
-                                }
-
-                                Text(text("body_helper"))
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(WabiTheme.textMuted)
-                            }
-                        }
-
-                        EditorFieldCard(title: text("reference_link")) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                ForEach($referenceLinks) { $link in
-                                    HStack(spacing: 10) {
-                                        TextField(text("reference_link_placeholder"), text: $link.value)
-                                            .font(.system(size: 16))
-                                            .foregroundStyle(WabiTheme.textPrimary)
-                                            .textInputAutocapitalization(.never)
-                                            .keyboardType(.URL)
-                                            .autocorrectionDisabled()
-                                            .padding(16)
-                                            .background(fieldBackground)
-
-                                        if referenceLinks.count > 1 {
-                                            Button {
-                                                removeLinkField(id: link.id)
-                                            } label: {
-                                                Image(systemName: "minus.circle.fill")
-                                                    .font(.system(size: 22))
-                                                    .foregroundStyle(WabiTheme.textMuted)
-                                            }
-                                            .buttonStyle(.plain)
+                                    if referenceLinks.count > 1 {
+                                        Button {
+                                            removeLinkField(id: link.id)
+                                        } label: {
+                                            Image(systemName: "minus.circle.fill")
+                                                .font(.system(size: 22))
+                                                .foregroundStyle(WabiTheme.textMuted)
                                         }
+                                        .buttonStyle(.plain)
                                     }
                                 }
-
-                                Button {
-                                    referenceLinks.append(ReferenceLinkField())
-                                } label: {
-                                    Label(text("add_reference_link"), systemImage: "plus")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(WabiTheme.accent)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 10)
-                                        .background(
-                                            Capsule()
-                                                .fill(WabiTheme.accentSoft.opacity(0.24))
-                                        )
-                                }
-                                .buttonStyle(.plain)
-
-                                Text(text("reference_links_helper"))
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(WabiTheme.textMuted)
                             }
-                        }
 
-                        if let note {
-                            EditorFieldCard(title: text("review_memory")) {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    EditorMetaRow(
-                                        label: text("created_on"),
-                                        value: note.createTime.formatted(
-                                            Date.FormatStyle(date: .abbreviated, time: .omitted)
-                                                .locale(currentLocale)
-                                        )
+                            Button {
+                                referenceLinks.append(ReferenceLinkField())
+                            } label: {
+                                Label(text("add_reference_link"), systemImage: "plus")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(WabiTheme.accent)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        Capsule()
+                                            .fill(WabiTheme.accentSoft.opacity(0.24))
                                     )
-                                    EditorMetaRow(label: text("last_reviewed"), value: reviewStatus(for: note))
-                                    EditorMetaRow(label: text("review_times"), value: "\(note.reviewCount)")
-                                }
+                            }
+                            .buttonStyle(.plain)
+
+                            Text(text("reference_links_helper"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(WabiTheme.textMuted)
+                        }
+                    }
+
+                    if let note {
+                        EditorFieldCard(title: text("review_memory")) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                EditorMetaRow(
+                                    label: text("created_on"),
+                                    value: note.createTime.formatted(
+                                        Date.FormatStyle(date: .abbreviated, time: .omitted)
+                                            .locale(currentLocale)
+                                    )
+                                )
+                                EditorMetaRow(label: text("last_reviewed"), value: reviewStatus(for: note))
+                                EditorMetaRow(label: text("review_times"), value: "\(note.reviewCount)")
                             }
                         }
                     }
-                    .padding(20)
                 }
+                .padding(20)
             }
-            .navigationTitle(text(note == nil ? "new_note" : "edit_note"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(text("cancel")) {
-                        dismiss()
-                    }
-                    .foregroundStyle(WabiTheme.textSecondary)
+        }
+        .navigationTitle(text(note == nil ? "new_note" : "edit_note"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(text("save")) {
+                    saveNote()
+                    dismiss()
                 }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(text("save")) {
-                        saveNote()
-                        dismiss()
-                    }
-                    .disabled(isSaveDisabled)
-                    .foregroundStyle(isSaveDisabled ? WabiTheme.textMuted : WabiTheme.accent)
-                }
+                .disabled(isSaveDisabled)
+                .foregroundStyle(isSaveDisabled ? WabiTheme.textMuted : WabiTheme.accent)
             }
         }
         .onAppear {
@@ -307,6 +298,14 @@ struct EditNoteView: View {
     private var currentLocale: Locale {
         localizationManager.locale
     }
+
+    private func removeLinkField(id: UUID) {
+        referenceLinks.removeAll { $0.id == id }
+
+        if referenceLinks.isEmpty {
+            referenceLinks = [ReferenceLinkField()]
+        }
+    }
 }
 
 private enum EditorField {
@@ -374,16 +373,6 @@ private struct EditorMetaRow: View {
             Text(value)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(WabiTheme.textPrimary)
-        }
-    }
-}
-
-private extension EditNoteView {
-    func removeLinkField(id: UUID) {
-        referenceLinks.removeAll { $0.id == id }
-
-        if referenceLinks.isEmpty {
-            referenceLinks = [ReferenceLinkField()]
         }
     }
 }

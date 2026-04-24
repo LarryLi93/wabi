@@ -5,6 +5,7 @@ enum AppSection: Hashable {
     case home
     case graph
     case review
+    case settings
 }
 
 struct ContentView: View {
@@ -13,8 +14,6 @@ struct ContentView: View {
     @EnvironmentObject private var authManager: AuthSessionManager
     @Query(sort: \Note.createTime, order: .reverse) private var notes: [Note]
 
-    @State private var showNewNote = false
-    @State private var editNote: Note?
     @State private var showLanguagePicker = false
     @State private var pendingDeleteNote: Note?
     @State private var showAccountSheet = false
@@ -31,50 +30,49 @@ struct ContentView: View {
                     categoryNames: categoryNames,
                     linkedCount: linkedCount,
                     categorizedCount: categorizedCount,
-                    onCreate: { showNewNote = true },
-                    onShowLanguagePicker: { showLanguagePicker = true },
-                    avatarText: authManager.currentUser?.initials ?? "?",
-                    onOpenAccount: { showAccountSheet = true },
-                    onOpenGraph: { selectedSection = .graph },
-                    onOpenReview: { selectedSection = .review },
-                    onEdit: { editNote = $0 },
+                    onEdit: { _ in },
                     onDelete: { pendingDeleteNote = $0 },
                     onReview: markReviewed
                 )
                 .tag(AppSection.home)
                 .tabItem {
                     Image(systemName: "house")
+                    Text(text("tab_home"))
                 }
 
                 GraphSectionView(
                     notes: notes,
                     categoryNames: categoryNames,
                     linkedCount: linkedCount,
-                    onCreate: { showNewNote = true },
-                    onShowLanguagePicker: { showLanguagePicker = true },
-                    avatarText: authManager.currentUser?.initials ?? "?",
-                    onOpenAccount: { showAccountSheet = true },
-                    onEdit: { editNote = $0 }
+                    onEdit: { _ in }
                 )
                 .tag(AppSection.graph)
                 .tabItem {
                     Image(systemName: "point.3.connected.trianglepath.dotted")
+                    Text(text("tab_graph"))
                 }
 
                 ReviewSectionView(
                     notes: notes,
                     reviewQueue: reviewQueue,
-                    onCreate: { showNewNote = true },
-                    onShowLanguagePicker: { showLanguagePicker = true },
-                    avatarText: authManager.currentUser?.initials ?? "?",
-                    onOpenAccount: { showAccountSheet = true },
-                    onEdit: { editNote = $0 },
+                    onEdit: { _ in },
                     onDelete: { pendingDeleteNote = $0 },
                     onReview: markReviewed
                 )
                 .tag(AppSection.review)
                 .tabItem {
                     Image(systemName: "clock.arrow.circlepath")
+                    Text(text("tab_review"))
+                }
+
+                SettingsSectionView(
+                    onShowLanguagePicker: { showLanguagePicker = true },
+                    onOpenAccount: { showAccountSheet = true }
+                )
+                .tag(AppSection.settings)
+                .tabItem {
+                    Image(systemName: "gearshape")
+                    Text(text("tab_settings"))
                 }
             }
 
@@ -156,20 +154,6 @@ struct ContentView: View {
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
                 .zIndex(2)
             }
-        }
-        .sheet(isPresented: $showNewNote) {
-            EditNoteView()
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(32)
-                .presentationBackground(WabiTheme.background)
-        }
-        .sheet(item: $editNote) { note in
-            EditNoteView(note: note)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(32)
-                .presentationBackground(WabiTheme.background)
         }
         .tint(WabiTheme.accent)
     }
